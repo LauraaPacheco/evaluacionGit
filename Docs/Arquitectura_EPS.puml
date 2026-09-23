@@ -1,0 +1,73 @@
+@startuml Arquitectura_EPS
+title Arquitectura de Microservicios - EPS
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "Afiliado" as afiliado
+actor "Médico / IPS" as medico
+actor "Administrativo" as admin
+
+package "Canales" {
+  [Portal Web] as web
+  [App Móvil] as app
+}
+
+[API Gateway] as gateway
+[Servicio de Autenticación\n(OAuth2 / JWT)] as auth
+
+package "Microservicios de negocio" {
+  [Afiliaciones] as afil
+  [Citas Médicas] as citas
+  [Historia Clínica] as hc
+  [Autorizaciones] as autz
+  [Facturación y Pagos] as fact
+  [Notificaciones] as notif
+}
+
+queue "Bus de eventos\n(Kafka / RabbitMQ)" as bus
+
+database "BD Afiliados" as dbAfil
+database "BD Citas" as dbCitas
+database "BD Clínica" as dbHc
+database "BD Autorizaciones" as dbAutz
+database "BD Facturación" as dbFact
+
+cloud "Sistemas externos" {
+  [ADRES / RUAF] as adres
+  [Pasarela de pagos] as pagos
+  [Email / SMS] as sms
+}
+
+afiliado --> web
+afiliado --> app
+medico --> web
+admin --> web
+
+web --> gateway
+app --> gateway
+gateway --> auth
+
+gateway --> afil
+gateway --> citas
+gateway --> hc
+gateway --> autz
+gateway --> fact
+
+afil --> dbAfil
+citas --> dbCitas
+hc --> dbHc
+autz --> dbAutz
+fact --> dbFact
+
+afil ..> bus : publica eventos
+citas ..> bus
+autz ..> bus
+fact ..> bus
+bus ..> notif : consume eventos
+
+afil --> adres
+fact --> pagos
+notif --> sms
+
+@enduml
